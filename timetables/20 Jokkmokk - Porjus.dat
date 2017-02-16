@@ -1,0 +1,16 @@
+# Avgångar för linje 20.
+# Formatet är ÅÅÅÅ-MM-DD, datumfält med nollor avser dagliga turer. Datumfält med exakta datum avser engångsturer
+# Datum avgränsade med X avser inställda turer. Datum med X följt av ---- är alla turer inställda.
+
+2017-00-00:1300
+2017-00-00:1700
+2017-00-00:1900
+2017-12-23:2100
+2017-12-25:0900
+2017-12-24X----
+
+2017-00-20X----
+
+2018-00-00:1400
+2018-00-00:1800
+2018-00-00:2000
