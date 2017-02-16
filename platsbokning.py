@@ -57,16 +57,16 @@ class train(object):
 	""" Hanterar det valda tågets bokningsstatus """
 
 	def __init__(self):
-		self.seats = {}
-		self.departure_time = "1900"
-		self.departure_date = ["20" + time.strftime("%y"), time.strftime("%m"), time.strftime("%d")]
-		self.train_line = "18 Jokkmokk - Stockholm"
-		self.group_size = 1
-		self.car_length = 10
-		self.car_width = 4
-		self.car_isle = 0
-		self.car_division = 5
-		self.car_aisle = int(self.car_width / 2)
+		# Dessa variabler är inte konstanter som kan användas för att ställa in programmet, de ändras under körningen
+		self.seats = {} # Bokningsinformation för varje sittplats
+		self.departure_time = "1900" # Avgångstiden för bokningen eller avbokningen
+		self.departure_date = ["20" + time.strftime("%y"), time.strftime("%m"), time.strftime("%d")] # Avgångstiden
+		self.train_line = "18 Jokkmokk - Stockholm" # Tåglinjen som man arbetar med
+		self.group_size = 1 # Antalet resenärer i bokningen
+		self.car_length = 10 # Hur långt tåget är, ändras av programmet beroende på platsantal
+		self.car_width = 4 # Bredden på vagnarna
+		self.car_division = 5 # Det radantal som ingår i varje vagn
+		self.car_aisle = int(self.car_width / 2) # Den rad som markeras som mittgång
 
 	def set_line(self, line):
 		# Ställer in vilken linje som ska hanteras
@@ -133,7 +133,7 @@ class train(object):
 		return avaliable_time
 
 	def train_generator(self):
-		""" Skapar en bokningsfil för tåg vid vald tidpunkt """
+		#Skapar en bokningsfil för tåg vid vald tidpunkt
 		if not (os.path.isdir("./bookings")):
 			# Kontrollerar att bokningskatalogen finns och skapar den om den saknas
 			os.makedirs("./bookings")
@@ -148,27 +148,30 @@ class train(object):
 		booking_file.close()
 
 	def seat_availability(self, seat):
-		""" Kontrollerar bokningsstatus för en sittplats, observera att true betyder tillgänglig"""
+		#Kontrollerar bokningsstatus för en sittplats, observera att true betyder tillgänglig
 		if self.seats[seat] == 1:
 			return False
 		else:
 			return True
 
 	def seat_suggestion(self, group):
-		""" Tar fram förslag på placering för sammanhållen bokning (returnerar platserna som lista)"""
+		#Tar fram förslag på placering för sammanhållen bokning (returnerar platserna som lista)
 		seats_in_group = [0]
-
 		for i in range(1, len(self.seats)):
 			if group == 1 and self.seat_availability(i):
+				# Om gruppen bara har en medlem, returneras första lediga plats
 				return [i]
 
 			elif group == 2 and self.seat_availability(i) and self.seat_availability(i + 1):
+				# Om gruppen har två medlemmar returneras ett förslag när två lediga platser brevid varandra hittas
 				if i % 2 == 1:
 					seats_in_group.append(i)
 					seats_in_group.append(i + 1)
 					return seats_in_group[1:]
 
 			elif group > 2 and self.seat_availability(i) and i % 2 == 1:
+				# Detta stycke hanterar en grupp med mer än två medlemmar. Där reglerna är att den första platsen inte
+				# ska vara ensam, och att alla platser ska vara i samma vagn och på samma sida om mittgången
 				for j in range(group):
 					if i + j < len(booking.seats):
 						if self.seat_availability(i + j) and i // ((booking.car_division-1) * 2) == (i + j-1) // (
@@ -178,8 +181,8 @@ class train(object):
 					return seats_in_group[1:]
 				seats_in_group = [0]
 		return False
-	check_config()
 
+	check_config()
 
 	def save_train(self):
 		""" Sparar bokningsstatus till det aktuella tågets bokningsfil """
@@ -423,7 +426,8 @@ class Packer(Frame):
 			day.set(str(time.strftime("%d"))) # Begynnelsevärdet för datumväljaren anges till dagens datum
 			year = StringVar(self)
 			year.set("20" + time.strftime("%y")) # Begynnelsevärdet för årsväljaren anges till aktuellt år
-			YearOption = OptionMenu(self, year, "2016", "2017", "2018")
+			YearOption = OptionMenu(self, year, "20" + time.strftime("%y"), str(2001 + int(time.strftime("%y"))))
+			# Ger årsväljaren alternativen det aktuella året samt ett år framåt.
 			self.widget_list.append(pack_and_return(YearOption))
 			MonthOption = OptionMenu(self, month, "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
 			self.widget_list.append(pack_and_return(MonthOption))
@@ -484,9 +488,12 @@ class Grid(Frame):
 			return
 
 		def unmark_seat(seat_increment):
-			# Avmarkerar platser i bokningsprocessen
-			self.seat_button[seat_increment].configure(text=str(seat_increment),
+			# Avmarkerar platser i bokningsprocessen.
+			try:
+				self.seat_button[seat_increment].configure(text=str(seat_increment),
 				command=lambda seat_increment=seat_increment: mark_seat(seat_increment))
+			except:
+				return
 			try:
 				self.booking_progress.remove(seat_increment)
 				return
@@ -512,13 +519,27 @@ class Grid(Frame):
 				for i in booking.seat_suggestion(group):
 					mark_seat(i)
 			else:
+				# Skapar ett popupfönster om platsförslag misslyckas
 				fail_popup = Toplevel()
 				fail_text = Text(fail_popup, height=2, width=30, padx=10, pady=10)
 				fail_text.pack()
-				fail_text.insert(END, "Det finns ej nog många\nsammanhängande platser")
-				button = Button(fail_popup, text="Ok", command=fail_popup.destroy)
-				button.pack()
+				fail_text.insert(END, "Det finns ej nog många\nsammanhängande platser.")
+				button1 = Button(fail_popup, text="Föreslå spridda platser", command=lambda: fallback_seating(group))
+				button1.pack()
+				button2 = Button(fail_popup, text="Ok", command=fail_popup.destroy)
+				button2.pack()
 			return
+
+		def fallback_seating(group):
+			# Föreslår spridda platser, avsedd att användas när programmet inte kan få ihop en sammanhållen bokning
+			marked = 0
+			for i in range(1, len(booking.seats)+1):
+				if booking.seat_availability(i):
+					mark_seat(i)
+					marked += 1
+					if marked == group:
+						break
+			return True
 
 		def display_seats():
 			# Renderar en bild av bokningsläget
@@ -568,7 +589,7 @@ class Grid(Frame):
 			group.set(1) # Begynnelsevärdet för Gruppstorlek
 			GroupLabel = Label(self, text="För platsförslag, välj antal:")
 			grid_and_return(GroupLabel, column=0, columnspan=3, row=100)
-			GroupOption = OptionMenu(self, group, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+			GroupOption = OptionMenu(self, group, 1, 2, 3, 4, 5, 6, 7, 8)
 			grid_and_return(GroupOption, column=3, row=100)
 			GroupButton = Button(self, text="Ok", borderwidth=2, width=5, relief="raised", state=ACTIVE,
 								command=lambda: gui_seat_suggest(group.get()))
@@ -681,7 +702,7 @@ class Grid(Frame):
 			group.set(1) # Begynnelsevärdet för Gruppstorlek
 			GroupLabel = Label(self, text="För att få automatiskt platsförslag, välj antal:")
 			grid_and_return(GroupLabel, column=1, row=1)
-			GroupOption = OptionMenu(self, group, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+			GroupOption = OptionMenu(self, group, 1, 2, 3, 4, 5, 6, 7, 8)
 			grid_and_return(GroupOption, column=2, row=1)
 			GroupButton = Button(self, text="Ok", borderwidth=2, relief="raised", state=ACTIVE,
 								command=lambda: gui_seat_suggest(group.get()))
