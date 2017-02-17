@@ -57,7 +57,6 @@ class train(object):
 	""" Hanterar det valda tågets bokningsstatus """
 
 	def __init__(self):
-		# Dessa variabler är inte konstanter som kan användas för att ställa in programmet, de ändras under körningen
 		self.seats = {} # Bokningsinformation för varje sittplats
 		self.departure_time = "1900" # Avgångstiden för bokningen eller avbokningen
 		self.departure_date = ["20" + time.strftime("%y"), time.strftime("%m"), time.strftime("%d")] # Avgångstiden
@@ -113,6 +112,8 @@ class train(object):
 		lines = table_file.readlines()
 		avaliable_time = []
 		for line in lines:
+			# Bearbetar linjerna i tidtabellsfilen och lägger till avgångarna
+			# enligt de regler som anges där.
 			if "#" not in line:
 				if line.startswith(date[0] + "-" + date[1] + "-" + date[2] + ":"):
 					avaliable_time.append(line.split(":")[1].rstrip())
@@ -185,7 +186,7 @@ class train(object):
 	check_config()
 
 	def save_train(self):
-		""" Sparar bokningsstatus till det aktuella tågets bokningsfil """
+		# Sparar bokningsstatus till det aktuella tågets bokningsfil
 		print("Sparar bokningsstatus till det aktuella tågets bokningsfil")
 		booking_file = open(
 			"bookings/" + str(self.train_line) + self.departure_date[0] + self.departure_date[1] + \
@@ -200,7 +201,7 @@ class train(object):
 
 
 def list_line():
-	''' Returnerar en lista på tillgänliga linjer, utifrån timetables/settings.conf'''
+	# Returnerar en lista på tillgänliga linjer, utifrån timetables/settings.conf
 	try:
 		line_list = open("timetables/settings.conf", "r")
 	except:
@@ -218,7 +219,7 @@ def list_line():
 
 
 def about():
-	'''Om-fönstret i hjälpmenyn'''
+	# Om-fönstret i hjälpmenyn
 	about_win = Toplevel()
 	T = Text(about_win, height=2, width=30)
 	T.pack()
@@ -300,21 +301,23 @@ class Packer(Frame):
 				RadioButton = []
 				TimeList = booking.timetable_lookup(date)
 				for time in TimeList:
+					# Renderar radioknappar för tiderna i tidtabellen
 					radiovar = IntVar()
 					RadioButton.append(Radiobutton(self, text=time_formatter(time), variable=radiovar, value=time,
 							command=lambda radioiterand=radioiterand: radio_btn(RadioButton, radioiterand, TimeList)))
 					self.widget_list.append(pack_and_return(RadioButton[radioiterand]))
 					radioiterand += 1
 				if not unbook:
+					# Renderar bokningsknapp om man kom in via bokningsläget
 					DateChoosen = Button(self, text="Gå vidare för att boka",
 										command=lambda: seat_choice(date, booking.departure_time), state=DISABLED)
 					self.widget_list.append(pack_and_return(DateChoosen))
 				if unbook:
+					# Renderar avbokningsknapp om man kom in via avbokningsläget
 					DateChoosen = Button(self, text="Gå vidare för att avboka", command=lambda: unbooker(),
 										state=DISABLED)
 					self.widget_list.append(pack_and_return(DateChoosen))
-				booking.departure_date = date
-				booking.load_train() # Laddar in bokningsdata för det aktuella tåget, eftersom vi bytt avgång
+					booking.load_train() # Laddar in bokningsdata för det aktuella tåget, eftersom vi bytt avgång
 			else:
 				InfoText = Label(self, text="Det finns inga avgångstider den dagen")
 				self.widget_list.append(pack_and_return(InfoText))
@@ -551,7 +554,9 @@ class Grid(Frame):
 			seat_increment = 0
 
 			while seat_increment < len(booking.seats):
+				# Kör platsväljaren tills alla platser behandlats
 				for i in range(0, booking.car_length + math.ceil(booking.car_length / booking.car_division)):
+					# Går igenom antalet rader av platser
 
 					if i % booking.car_division == 0:
 						# Genererar rad med vagnsnummer om vagnslängden är nådd
@@ -559,13 +564,17 @@ class Grid(Frame):
 						if not i == booking.car_length:
 							grid_and_return(CarLabel, row=i + 2, column=aisle - 1, columnspan=3)
 					else:
+						# Bearbetar en kolumn om vagnslängden inte är nådd
 						if seat_increment < (len(booking.seats) // 2):
+							# Sätter begränsningarna för första kolumnens bredd
 							render_end = aisle + 1
 							render_start = 0
 						elif seat_increment >= (len(booking.seats) // 2):
+							# Sätter begränsningarna för andra kolumnens bredd
 							render_start = aisle + 1
 							render_end = booking.car_width + 1
 						for j in range(render_start, render_end):
+							# Sätter ut platserna i raden
 							if j == aisle:
 								AisleButton = Button(self, text=" - ", borderwidth=2, width=5, relief="raised",
 													state=DISABLED)
@@ -622,7 +631,6 @@ class Grid(Frame):
 			list_ungrid()
 			InstructionLabel1 = Label(self, text="Du håller på att göra föjande bokning:")
 			grid_and_return(InstructionLabel1, row=1)
-
 			InstructionLabel1 = Label(self, text="Tåglinje: " + str(line))
 			grid_and_return(InstructionLabel1, row=2)
 			InstructionLabel1 = Label(self, text=str(date[0]) + "-" + str(date[1])\
@@ -654,7 +662,10 @@ class Grid(Frame):
 		def print_ticket(prnt=False):
 			# Skriver biljetten till fil. Om prnt är True skrivs den ut på papper.
 
-			SaveConfirm = Label(self, text="Sparat", fg="red")
+			if prnt:
+				SaveConfirm = Label(self, text="Sparat i filen booking.txt och skickad till systemets stadardskrivare", fg="red")
+			else:
+				SaveConfirm = Label(self, text="Sparat i filen booking.txt", fg="red")
 			grid_and_return(SaveConfirm, row=29)
 
 			# Skriver biljetten till fil, och skickar den till systemets standardskrivare om alternativet print är aktivt.
@@ -684,7 +695,7 @@ class Grid(Frame):
 			PrintButton = Button(self, text="Spara biljett utan att skriva ut", borderwidth=2, relief="raised",
 								state=ACTIVE, command=lambda: print_ticket())
 			grid_and_return(PrintButton, row=2)
-			PrintButton = Button(self, text="Spara och Skriv ut", borderwidth=2, relief="raised",
+			PrintButton = Button(self, text="Spara biljett och Skriv ut", borderwidth=2, relief="raised",
 								state=ACTIVE, command=lambda: print_ticket(True))
 			grid_and_return(PrintButton, row=3)
 			MainMenu = Button(self, text="Tillbaka till huvudmenyn", borderwidth=2, relief="raised",
