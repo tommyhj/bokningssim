@@ -672,17 +672,35 @@ class Grid(Frame):
 			grid_and_return(SaveConfirm, row=29)
 
 			# Skriver biljetten till fil, och skickar den till systemets standardskrivare om alternativet print är aktivt.
-			booking_file = open("ticket.txt", "w+")
-			booking_file.write("Tågbiljett - Inlandsbanan\n_______________________\n")
-			booking_file.write("Linje " + str(booking.train_line) + "\n")
-			booking_file.write(str(booking.departure_date[0]) + "-" + str(booking.departure_date[1]) + "-" + str(
+
+			if os.path.isfile("ticket.txt"):
+				# Om filen ticket.txt finns, väljer ett annat filnamn
+				filename_iterand = 1
+				while os.path.isfile("ticket"+str(filename_iterand)+".txt"):
+					filename_iterand += 1
+				ticket_file = "ticket"+str(filename_iterand)+".txt"
+			else:
+				ticket_file = "ticket.txt"
+				
+			if prnt:
+				SaveConfirm = Label(self, text="Sparat i filen "+ticket_file+" och skickad till systemets stadardskrivare", fg="red")
+			else:
+				SaveConfirm = Label(self, text="Sparat i filen "+ticket_file, fg="red")
+			grid_and_return(SaveConfirm, row=29)
+
+
+
+			ticket = open(ticket_file, "w+")
+			ticket.write("Tågbiljett - Inlandsbanan\n_______________________\n")
+			ticket.write("Linje " + str(booking.train_line) + "\n")
+			ticket.write(str(booking.departure_date[0]) + "-" + str(booking.departure_date[1]) + "-" + str(
 				booking.departure_date[2]) + "\n")
-			booking_file.write("Avgång " + str(time_formatter(booking.departure_time)) + "\n")
+			ticket.write("Avgång " + str(time_formatter(booking.departure_time)) + "\n")
 			for plats in self.booking_progress:
-				booking_file.write("Plats " + str(plats) + "\n")
+				ticket.write("Plats " + str(plats) + "\n")
 
 			# Utskrift, testad på mac, kräver dock lpr för att fungera, så om det funkar kan variera mellan OS.
-			booking_file.close()
+			ticket.close()
 			if prnt:
 				call(["lpr", "ticket.txt"])
 			return
