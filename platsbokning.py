@@ -317,7 +317,10 @@ class Packer(Frame):
 					DateChoosen = Button(self, text="Gå vidare för att avboka", command=lambda: unbooker(),
 										state=DISABLED)
 					self.widget_list.append(pack_and_return(DateChoosen))
-					booking.load_train() # Laddar in bokningsdata för det aktuella tåget, eftersom vi bytt avgång
+				booking.departure_date = date
+				booking.load_train() # Laddar in bokningsdata för det aktuella tåget, eftersom vi bytt avgång
+
+
 			else:
 				InfoText = Label(self, text="Det finns inga avgångstider den dagen")
 				self.widget_list.append(pack_and_return(InfoText))
